@@ -1,0 +1,22 @@
+{
+  "params": {
+    "name": "wos46985",
+    "all_path": "./dataset/wos/WOS46985/WOS46985_all.csv",
+    "text": "text",
+    "label": "labels",
+    "split_ratio": 0.1,
+    "init_samples": 1500,
+    "max_seq_len": 150,
+    "batch_size": 100,
+    "padding_token": "<pad>",
+    "epochs": 20,
+    "budget": 15000,
+    "freq": 1500,
+    "init_b": 0,
+    "topK": 1
+  },
+  "model": {
+    "dim1": 512,
+    "dim2": 256
+  }
+}

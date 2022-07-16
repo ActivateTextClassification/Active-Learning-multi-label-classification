@@ -1,0 +1,23 @@
+{
+  "params": {
+    "name": "ag_news",
+    "all_path": "./dataset/ag_news/ag_news_all.csv",
+    "text": "text",
+    "label": "labels",
+    "split_ratio": 0.1,
+    "init_samples": 1000,
+    "max_seq_len": 150,
+    "batch_size": 200,
+    "vocabulary_size": 10000,
+    "padding_token": "<pad>",
+    "epochs": 20,
+    "budget": 20000,
+    "freq": 1000,
+    "init_b": 0,
+    "topK": 1
+  },
+  "model": {
+    "dim1": 512,
+    "dim2": 256
+  }
+}

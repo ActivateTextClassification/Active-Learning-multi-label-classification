@@ -1,0 +1,22 @@
+{
+  "params": {
+    "name": "wos5736",
+    "all_path": "./dataset/wos/WOS5736/WOS5736_all.csv",
+    "text": "text",
+    "label": "labels",
+    "split_ratio": 0.1,
+    "init_samples": 160,
+    "max_seq_len": 150,
+    "batch_size": 20,
+    "padding_token": "<pad>",
+    "epochs": 20,
+    "budget": 3800,
+    "freq": 200,
+    "init_b": 0,
+    "topK": 1
+  },
+  "model": {
+    "dim1": 512,
+    "dim2": 256
+  }
+}
