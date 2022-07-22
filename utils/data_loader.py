@@ -9,16 +9,11 @@ def load_dataset_by_name(name, split_ratio=0.1):
     if str(name).__contains__("arxiv"):
         return load_arxiv(split_ratio)
     else:
-        return load_yelp_full_review(name, split_ratio)
+        return load_data(name, split_ratio)
 
 
-def load_yelp_full_review(name, split_ratio=0.1):
-    # train_df = pd.read_csv('./dataset/yelp/yelp_train.csv')
+def load_data(name, split_ratio=0.1):
     test_data = pd.read_csv(name)
-    # train_data = pd.concat([train_df, test_df])
-    # train_df["labels"] = train_df["labels"].apply(
-    #     lambda x: [str(x)]
-    # )
     test_data["labels"] = test_data["labels"].apply(
         lambda x: [str(x)]
     )

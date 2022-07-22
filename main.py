@@ -1,5 +1,4 @@
 import argparse
-import copy
 import json
 import os
 import time
@@ -7,7 +6,6 @@ from utils.metrics import make_model
 from train.active_learning import active_learning_loop
 from train.train_inference import train_model, precision_m, recall_m
 from utils.data_loader import preprocessing_dataset, load_dataset_by_name
-from tensorflow import keras
 import tensorflow_addons as tfa
 
 """
@@ -22,7 +20,7 @@ some basic exploratory data analysis (EDA).
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--strategy', required=False, default="RANDOM")
+    parser.add_argument('--strategy', required=False, default="")
     parser.add_argument('--loop', required=False, default="hloop")
     parser.add_argument('--config', required=True, help="Please give a config.json file with "
                                                         "training/model/data/param details")
@@ -76,6 +74,10 @@ if __name__ == '__main__':
     """
     ## 5. Active learning loop
     """
+    if not os.path.exists("output"):
+        os.mkdir("output")
+    if not os.path.exists("output/" + params['loop']):
+        os.mkdir("output/" + params['loop'])
     exp_folder = "output/" + params['loop'] + '/' + params['name'] + "_epoch_" + str(params['epochs']) + "_init_" + str(
         num_samples) + "_f1_" + str(
         round(f1_score * 100, 2)) + "_at_" + str(round(time.time())) + "/"
@@ -91,8 +93,12 @@ if __name__ == '__main__':
                      "LEAST_PROB",
                      "HIGH_ENTROPY",
                      "MC_DROPOUT",
-                     #"CMBAL"
+                     "CMBAL"
                      ]
+    # if passing strategy, run it
+    if args.strategy != "":
+        strategy_list = [args.strategy]
+    # else run all the strategies
     for strategy in strategy_list:
         params['strategy'] = strategy
         lookup = params['lookup']

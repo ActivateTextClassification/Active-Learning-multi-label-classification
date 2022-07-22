@@ -2,8 +2,7 @@ from utils.metrics import make_dataset, map_dataset, \
     get_text_vectorizer
 from tensorflow import keras
 import tensorflow as tf
-
-from strategies import switch_strategy
+from utils.strategies import switch_strategy
 
 
 def active_learning_loop(zipped_df, data_df, params, shallow_mlp_model, text_vectorizer):
@@ -12,10 +11,7 @@ def active_learning_loop(zipped_df, data_df, params, shallow_mlp_model, text_vec
     freq = params["freq"]  # the number of annotations in each AL round
     b = params["init_b"]
     epochs = params["epochs"]
-
     start_df, init_df, unlabelled_df = zipped_df
-    # options for strategy: random/uncertainty/diversity/cor_multi
-    strategy = params['strategy']
     params['init_df'] = init_df
     # we have initialized the model based on init_df, so just go to the active learning part
     result_file_name = params['result']
@@ -28,16 +24,14 @@ def active_learning_loop(zipped_df, data_df, params, shallow_mlp_model, text_vec
                                                    outputs=shallow_mlp_model.layers[1].output)
 
             # apply active learning strategies
-            valid_strategy_list = ["RANDOM", "LEAST_PROB", "HIGH_ENTROPY", "MC_DROPOUT"]
-            if params['strategy'] == "CMBAL":
-                selected_df = switch_strategy(strategy)(model_for_inference, intermediate_layer_model,
-                                                        text_vectorizer, init_df,
-                                                        unlabelled_df, params)
-            elif params['strategy'] in valid_strategy_list:
-                selected_df, predicted_labels = switch_strategy(strategy)(model_for_inference, unlabelled_df, params)
-            elif params['strategy'] == "GREEDY":
-                selected_df, predicted_labels = switch_strategy(strategy)(model_for_inference,
-                                                                          unlabelled_df, params)
+            probability_based_strategy_list = ["RANDOM", "LEAST_PROB", "HIGH_ENTROPY", "MC_DROPOUT"]
+            diversity_based_strategy_list = ["CMBAL"]
+            if params['strategy'] in diversity_based_strategy_list:
+                selected_df = switch_strategy("diversity")(model_for_inference, intermediate_layer_model,
+                                                           text_vectorizer, init_df,
+                                                           unlabelled_df, params)
+            elif params['strategy'] in probability_based_strategy_list:
+                selected_df = switch_strategy("probability")(model_for_inference, unlabelled_df, params)
             else:
                 # TODO
                 break
