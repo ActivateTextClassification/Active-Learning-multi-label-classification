@@ -42,7 +42,7 @@ def compute_label_sparse(start_df, dim, lookup):
 # compute data point uncertainty based on top k average entropies
 def compute_uncertainty(unlabelled_df, model_for_inference, top_k):
     avg_entropy_list = []
-    inference_dataset = make_dataset(unlabelled_df, is_train=False)
+    inference_dataset = make_batch_dataset(unlabelled_df, is_train=False)
     text_batch, label_batch = next(iter(inference_dataset))
     predicted_probabilities = model_for_inference.predict(text_batch)
     # for the top_k probabilities , compute average entropy
@@ -62,7 +62,7 @@ def compute_diversity(start_df, unlabelled_df, text_vectorizer, intermediate_lay
     len_unlabelled = len(unlabelled_df)
     all_df = pd.concat([start_df, unlabelled_df], axis=0)
     # Create a small dataset just for demoing inference.
-    inference_dataset = make_dataset(all_df, params, is_train=False)
+    inference_dataset = make_batch_dataset(all_df, params, is_train=False)
     # text_batch, label_batch = next(iter(inference_dataset))
     inference_feature_dataset = inference_dataset.map(
         lambda text, label: (text_vectorizer(text), label), num_parallel_calls=auto
@@ -83,7 +83,7 @@ def compute_diversity(start_df, unlabelled_df, text_vectorizer, intermediate_lay
     return avg_diversity_list
 
 
-def make_dataset(dataframe, params, is_train=True):
+def make_batch_dataset(dataframe, params, is_train=True):
     lookup = params["lookup"]
     batch_size = params["batch_size"]
     label_name = params["label"]
@@ -97,6 +97,20 @@ def make_dataset(dataframe, params, is_train=True):
     dataset = dataset.shuffle(batch_size * 10) if is_train else dataset
     dataset = dataset.map(unify_text_length, num_parallel_calls=auto).cache()
     return dataset.batch(batch_size)
+
+
+def make_test_dataset(dataframe, params, is_train=True):
+    lookup = params["lookup"]
+    label_name = params["label"]
+    text_name = params["text"]
+    labels = tf.ragged.constant(dataframe[label_name].values)
+    binarized_label = lookup(labels).numpy()
+    print("make dataset:", labels.shape, dataframe[text_name].values.shape)
+    dataset = tf.data.Dataset.from_tensor_slices(
+        (dataframe[text_name].values, binarized_label)
+    )
+    dataset = dataset.map(unify_text_length, num_parallel_calls=auto).cache()
+    return dataset.batch(1)
 
 
 def unify_text_length(text, label, max_seq_len=150):
@@ -156,3 +170,15 @@ def invert_multi_hot(encoded_labels, vocab):
 
 def get_text_vectorizer(vocabulary_size, ngrams):
     return layers.TextVectorization(max_tokens=vocabulary_size, ngrams=ngrams, output_mode="tf_idf")
+
+
+def get_embeddings(data):
+    self.clf.eval()
+    embeddings = torch.zeros([len(data), self.clf.get_embedding_dim()])
+    loader = DataLoader(data, shuffle=False, **self.params['test_args'])
+    with torch.no_grad():
+        for x, y, idxs in loader:
+            x, y = x.to(self.device), y.to(self.device)
+            out, e1 = self.clf(x)
+            embeddings[idxs] = e1.cpu()
+    return embeddings

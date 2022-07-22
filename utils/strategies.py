@@ -2,7 +2,9 @@ from scipy.stats import entropy
 import pandas as pd
 import numpy as np
 import tensorflow as tf
-from utils.metrics import compute_correlation, compute_diversity, compute_label_sparse, make_dataset
+from utils.metrics import compute_correlation, compute_diversity, compute_label_sparse, make_batch_dataset, \
+    make_test_dataset, map_dataset
+from keras import backend as K
 
 
 def switch_strategy(method):
@@ -26,41 +28,46 @@ def acquire_diversity_based_data_samples(model_for_inference, intermediate_layer
     batch_size = int(params['batch_size'])
     selected_batches = int(freq_samples / batch_size)
 
-    cor_matrix = compute_correlation(init_df, len(vocab), lookup)
-    label_counts = compute_label_sparse(init_df, len(vocab), lookup)
-
     # do not shuffle data if is_train=False
-    unlabelled_dataset = make_dataset(unlabelled_df, params, is_train=False)
+    # unlabelled_dataset = make_batch_dataset(unlabelled_df, params, is_train=False)
+    unlabelled_dataset = make_test_dataset(unlabelled_df, params, is_train=False)
+    unlabelled_dataset = map_dataset(unlabelled_dataset, text_vectorizer)
+
     #
     suggest_annotate_index_list = []
-    diversity_list = compute_diversity(init_df, unlabelled_df, text_vectorizer,
-                                       intermediate_layer_model, params)
+    # cor_matrix = compute_correlation(init_df, len(vocab), lookup)
+    # label_counts = compute_label_sparse(init_df, len(vocab), lookup)
+    # diversity_list = compute_diversity(init_df, unlabelled_df, text_vectorizer,
+    #                                    intermediate_layer_model, params)
     for i, (text_batch, label_batch) in enumerate(unlabelled_dataset):
         # the predicted probabilities, which can be used to compute uncertainty
-        predicted_probabilities = model_for_inference.predict(text_batch)
-        label_indexes = []
-        predicted_labels = []
-        cor_uncertainty = []
-        for prob in predicted_probabilities:
-            predicted_label = tf.math.argmax(prob).numpy()
-            predicted_labels.append(predicted_label)
-            phi_1 = 0
-            top_indexes = sorted(range(len(prob)), key=lambda k: prob[k])[-top_k:]
-            for m in range(0, len(top_indexes)):
-                label_uncertainty = entropy([prob[m], 1 - prob[m]], base=2)
-                w = 0
-                for n in range(m, len(top_indexes)):
-                    w += cor_matrix[m][n]
-                w1 = 1 - w / cor_matrix.shape[0]
-                w2 = 1 - label_counts[m] / len(init_df)
-                phi_1 = phi_1 + w1 * w2 * label_uncertainty
-            phi_1 = phi_1 / len(top_indexes)
-            cor_uncertainty.append(phi_1)
-            label_indexes.append(top_indexes)
-        phi_12 = [a * b for a, b in zip(cor_uncertainty, diversity_list)]
-        top_suggestions = sorted(range(len(phi_12)), key=lambda l: phi_12[l])[-selected_batches:]
-        suggest_annotate_index = sorted(top_suggestions)
-        suggest_annotate_index_list += suggest_annotate_index
+        predicted_probabilities = model_for_inference.eval(text_batch)
+        # shallow_mlp_model.evaluate(text_batch)
+        # output = shallow_mlp_model.layers[2].get_weights()
+        breakpoint()
+        # label_indexes = []
+        # predicted_labels = []
+        # cor_uncertainty = []
+        # for prob in predicted_probabilities:
+        #     predicted_label = tf.math.argmax(prob).numpy()
+        #     predicted_labels.append(predicted_label)
+        #     phi_1 = 0
+        #     top_indexes = sorted(range(len(prob)), key=lambda k: prob[k])[-top_k:]
+        #     for m in range(0, len(top_indexes)):
+        #         label_uncertainty = entropy([prob[m], 1 - prob[m]], base=2)
+        #         w = 0
+        #         for n in range(m, len(top_indexes)):
+        #             w += cor_matrix[m][n]
+        #         w1 = 1 - w / cor_matrix.shape[0]
+        #         w2 = 1 - label_counts[m] / len(init_df)
+        #         phi_1 = phi_1 + w1 * w2 * label_uncertainty
+        #     phi_1 = phi_1 / len(top_indexes)
+        #     cor_uncertainty.append(phi_1)
+        #     label_indexes.append(top_indexes)
+        # phi_12 = [a * b for a, b in zip(cor_uncertainty, diversity_list)]
+        # top_suggestions = sorted(range(len(phi_12)), key=lambda l: phi_12[l])[-selected_batches:]
+        # suggest_annotate_index = sorted(top_suggestions)
+        # suggest_annotate_index_list += suggest_annotate_index
     return unlabelled_df.iloc[suggest_annotate_index_list]
 
 
@@ -70,7 +77,7 @@ def acquire_probability_based_data_samples(model_for_inference, unlabelled_df, p
     batch_size = int(params['batch_size'])
     selected_batches = int(freq_samples / batch_size)
     # do not shuffle data if is_train=False
-    unlabelled_dataset = make_dataset(unlabelled_df, params, is_train=False)
+    unlabelled_dataset = make_batch_dataset(unlabelled_df, params, is_train=False)
     unlabelled_df_index = unlabelled_df.index
     selected_idx = []
     strategy = params['strategy']

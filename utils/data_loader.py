@@ -2,7 +2,7 @@ from sklearn.model_selection import train_test_split
 from ast import literal_eval
 import tensorflow as tf
 import pandas as pd
-from utils.metrics import map_dataset, make_dataset, get_text_vectorizer
+from utils.metrics import map_dataset, make_batch_dataset, get_text_vectorizer
 
 
 def load_dataset_by_name(name, split_ratio=0.1):
@@ -125,9 +125,9 @@ def preprocessing_dataset(data, params):
     """
     make dataset
     """
-    train_dataset = make_dataset(init_df, params, is_train=True)
-    validation_dataset = make_dataset(val_df, params, is_train=False)
-    test_dataset = make_dataset(test_df, params, is_train=False)
+    train_dataset = make_batch_dataset(init_df, params, is_train=True)
+    validation_dataset = make_batch_dataset(val_df, params, is_train=False)
+    test_dataset = make_batch_dataset(test_df, params, is_train=False)
     print("train_dataset:{}".format(train_dataset))
     """
     ## Vectorization

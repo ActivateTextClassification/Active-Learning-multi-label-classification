@@ -1,4 +1,4 @@
-from utils.metrics import make_dataset, map_dataset, \
+from utils.metrics import make_batch_dataset, map_dataset, \
     get_text_vectorizer
 from tensorflow import keras
 import tensorflow as tf
@@ -27,7 +27,7 @@ def active_learning_loop(zipped_df, data_df, params, shallow_mlp_model, text_vec
             probability_based_strategy_list = ["RANDOM", "LEAST_PROB", "HIGH_ENTROPY", "MC_DROPOUT"]
             diversity_based_strategy_list = ["CMBAL"]
             if params['strategy'] in diversity_based_strategy_list:
-                selected_df = switch_strategy("diversity")(model_for_inference, intermediate_layer_model,
+                selected_df = switch_strategy("diversity")(shallow_mlp_model, intermediate_layer_model,
                                                            text_vectorizer, init_df,
                                                            unlabelled_df, params)
             elif params['strategy'] in probability_based_strategy_list:
@@ -47,9 +47,9 @@ def active_learning_loop(zipped_df, data_df, params, shallow_mlp_model, text_vec
             params['init_df'] = init_df
             # Retrain the model
             start_df, val_df, test_df = data_df
-            train_dataset = make_dataset(init_df, params, is_train=True)
-            validation_dataset = make_dataset(val_df, params, is_train=False)
-            test_dataset = make_dataset(test_df, params, is_train=False)
+            train_dataset = make_batch_dataset(init_df, params, is_train=True)
+            validation_dataset = make_batch_dataset(val_df, params, is_train=False)
+            test_dataset = make_batch_dataset(test_df, params, is_train=False)
             # update vectorizer by vocab size
             vocabulary_size = params['vocabulary_size']
             print("Updated Vocabulary Size:{}".format(vocabulary_size))
